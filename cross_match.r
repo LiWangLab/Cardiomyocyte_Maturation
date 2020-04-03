@@ -3,8 +3,8 @@
 ####Datasets needs to be determined before running cross-match
 ####File1: the ENTREZID of differently expressed secreted proteins. Here in the demo you can find the cell_156_ligand_2
 ####File2: KEGG pathways' definitions and their related genes. Here in the demo you can find mmu_kegg_gene
-#### File is created following the steps below:
-    #1. use program kg to extract genes related to KEGG pathway 
+####File2 is created following the steps below:
+    #1. The KEGG pathways associated with genes were retrieved by the program kg (https://github.com/endrebak/kg) 
         kg -s mmu -d >mmu_kegg_path2gene
 
        #-s SPEC --species=SPEC  name of species (examples: hsa, mmu, rno...) 
@@ -15,6 +15,7 @@
        
 	#3. read the file into R 
 	   mmu_kegg_gene<-read.delim("mmu_kegg_path2gene_full",header=T,as.is=T)
+	   
 ####File3：a list of enriched pathways from multiple clusters. Here in the demo you can find enrich_sel
 ############################################################################
 
@@ -31,12 +32,12 @@ keytypes(org.Mm.eg.db)
 
 load("demo.rdata")
 
-####Find the KEGG pethways which the differently expressed secreted proteins are involved in.
+####Find the KEGG pathways which the differently expressed secreted proteins are involved in.
 sec_id = AnnotationDbi::select(org.Mm.eg.db,keys= cell_156_ligand_2$gene,keytype="SYMBOL", columns = "ENTREZID", multiVals="first")  
 sec_kegg <- merge(unique(sec_id),mmu_kegg_gene,by.x="ENTREZID",by.y="entrezgene")  
 
 
-####Then the pathways can be overlapped with the enrichment result
+####Then the pathways can be overlapped with the enrichment result.
 
 cross_gene_pathway_sel <- function (gene_term_set,gene_enrich_list,title,type="KEGG"){
 
@@ -79,7 +80,7 @@ ligand_pathway <- ligand_sel_kg
 ligand_pathway$ligand_group <-paste(ligand_pathway$cell, ligand_pathway$Ligand,sep="_")  
 
 
-#### To generate a network graph. NOTE: the spatial structure of the network can be different from each time the network is produced. 
+####To generate a network graph. Please NOTE: the spatial structure of the network can be different from each time the network is produced. 
 library(network)
 ligand_name <-sort(unique(ligand_pathway$ligand_group))  
 term_name <-unique(ligand_pathway$definition)   
@@ -114,7 +115,7 @@ cell_network %v% "label_size" = ifelse(regexec("_",cell_network_vertex)!=-1, 3, 
 
 library(GGally)
 
-##You may reset the color
+##Set the color
 color_palette<- c("CM_2_" = "#FF6A6A", "CM_3_" = "#CD5555", "EC_1_" = "#63B8FF",
 				  "FB_1_" = "#76EEC6", "FB_3_" = "#90EE90", "FB_4_" = "#43CD80","FB_5_"="#BCEE68",
 				  "MP_3_" = "#FF8C00", "SMC_2" = "#FFFF00", "SMC_3" = "#FFD700", "term"="pink")
@@ -125,7 +126,6 @@ p<-ggnet2(cell_network,size = "type",size.palette = c("term" = 18, "ligand" = 3)
          shape="type",shape.palette= c("term" = 18, "ligand" = 20),color="cell_type",
 		 alpha = 1,edge.alpha = 1,palette=color_palette,
 		 label.size="label_size",label= c(ligand_name,1:29))		 
-#p<-font_theme(p)
 print(p)
 dev.off()
 
@@ -135,7 +135,6 @@ cell_network_legend <- data.frame(node=1:29, pathway=ggnet2(cell_network,size = 
                            size.palette = c("term" = 6, "ligand" = 1),color="cell_type",
 						   palette=color_palette,label.size="label_size",label=TRUE)$data [99:127,1])
 write.xlsx(cell_network_legend, file="network_legend.xlsx", sheetName="correlation",row.names=FALSE)
-
 
 
 ############################################################################
